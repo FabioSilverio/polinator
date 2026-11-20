@@ -168,19 +168,23 @@
         <div class="sec-head">
           <p class="eyebrow">Ranking POLINATOR</p>
           <h2>Onde gastar as férias agora</h2>
-          <p>Preço estimado por pessoa em dólar, com o câmbio do dia. Toque no nome da cidade para abrir no Google Maps. Mexa na linha do tempo lá em cima e veja o ranking se reorganizar mês a mês.</p>
+          <p>Preço estimado por pessoa em dólar, com o câmbio do dia. Toque numa cidade para ver fotos, história, custo de vida, atrações e compartilhar o card. Mexa na linha do tempo lá em cima e veja o ranking se reorganizar mês a mês.</p>
         </div>
         <div class="controls">
           <div class="seg card" id="regionSeg" role="group" aria-label="Região"></div>
-          <div class="seg card" id="sortSeg" role="group" aria-label="Ordenar por"></div>
+          <div class="seg-pair">
+            <div class="seg card" id="viewSeg" role="group" aria-label="Visualização"></div>
+            <div class="seg card" id="sortSeg" role="group" aria-label="Ordenar por"></div>
+          </div>
         </div>
-        <div class="rank card">
+        <ol class="city-grid" id="cityGrid"></ol>
+        <div class="rank card" id="rankTable" hidden>
           <div class="rank-head" aria-hidden="true">
             <span>#</span><span>Cidade</span><span>Dólar real 12m</span><span>Câmbio 12m</span><span>Por dia</span><span>7 dias + voo</span><span>Nota</span>
           </div>
           <ol class="rank-list" id="rankList"></ol>
-          <div class="more"><button class="pill-btn" id="moreBtn" type="button">Ver todas</button></div>
         </div>
+        <div class="more"><button class="pill-btn" id="moreBtn" type="button">Ver todas</button></div>
       </div>
     </section>
 
@@ -214,11 +218,21 @@ nota = 0,5·valor(custo efetivo) + 0,2·faixa(real12) + 0,1·faixa(Δ3m) + 0,2·
   </footer>
 
   <div class="tooltip" id="tip" role="tooltip"></div>
+  <div class="sheet-root" id="sheetRoot" hidden>
+    <div class="scrim" data-close></div>
+    <article class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1">
+      <div class="grab" aria-hidden="true"><span></span></div>
+      <div class="sheet-body" id="sheetBody"></div>
+    </article>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
   <script src="data.js"></script>
+  <script src="cities.js"></script>
+  <script src="media.js"></script>
   <script src="app.js"></script>
+  <script src="cards.js"></script>
 </body>
 </html>

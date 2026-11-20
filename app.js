@@ -47,7 +47,7 @@
   const fmtUSD = (v) => "US$ " + Math.round(v).toLocaleString("pt-BR");
   const mapsUrl = (q) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
   const PIN = '<svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
-  const cityLink = (m, cls = "city-link") => `<a class="${cls}" href="${mapsUrl(m.city + ", " + m.country)}" target="_blank" rel="noopener" title="Abrir ${esc(m.city)} no Google Maps">${esc(m.city)}${PIN}</a>`;
+  const cityLink = (m) => `<span class="city-wrap"><button type="button" class="city-link" data-city="${m.id}" title="Abrir a ficha de ${esc(m.city)}">${esc(m.city)}</button><a class="pin-link" href="${mapsUrl(m.city + ", " + m.country)}" target="_blank" rel="noopener" aria-label="Abrir ${esc(m.city)} no Google Maps" title="Google Maps">${PIN}</a></span>`;
   const CUR = [...new Set(Object.values(P.countries).map((c) => c.cur))];
   const FLOAT = CUR.filter((c) => c !== "USD" && !Object.values(P.countries).find((k) => k.cur === c && k.peg));
   const N = 25; // months t-24 … t (index 24 = latest)
@@ -55,7 +55,7 @@
   const S = {
     R: new Array(N).fill(null), dates: new Array(N).fill(null), live: false, hist: false,
     t: 24, metrics: [], region: "all", sort: "score", showAll: false,
-    selected: null, legend: null, firstRank: true, playing: null, k: 1,
+    selected: null, legend: null, view: "cards", firstRank: true, playing: null, k: 1,
   };
 
   /* =================== FX loading =================== */
@@ -170,6 +170,7 @@
     swapText($("#hNameB"), b.city); $("#hSubB").textContent = `${b.country} · ${b.cur}`;
     const avA = $("#hAvA"), avB = $("#hAvB");
     avA.textContent = a.cc; avB.textContent = b.cc;
+    [[".who.a", a], [".who.b", b]].forEach(([s, m]) => { const el = $(s); el.dataset.city = m.id; el.tabIndex = 0; el.setAttribute("role", "button"); el.setAttribute("aria-label", `Abrir a ficha de ${m.city}`); });
     $("#hLead").textContent = a.city;
     const hl = $("#headline");
     const txt = live ? " lidera agora" : ` liderava em ${fmtMonth(S.dates[S.t] || "")}`;
@@ -307,7 +308,7 @@
   /* ---------- FLIP helper (keyed list, smooth reorder) ---------- */
   function flipList(ul, items, key, fill) {
     const before = new Map();
-    [...ul.children].forEach((el) => before.set(el.dataset.k, el.getBoundingClientRect().top));
+    [...ul.children].forEach((el) => { const r = el.getBoundingClientRect(); before.set(el.dataset.k, { x: r.left, y: r.top }); });
     const existing = new Map([...ul.children].map((el) => [el.dataset.k, el]));
     const frag = document.createDocumentFragment();
     items.forEach((it, i) => {
@@ -322,11 +323,11 @@
     let n = 0;
     [...ul.children].forEach((el) => {
       const f = before.get(el.dataset.k);
-      const l = el.getBoundingClientRect().top;
+      const r = el.getBoundingClientRect();
       if (f == null) {
         if (before.size) el.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: Math.min(n++ * 20, 240), easing: EASE_OUT, fill: "backwards" });
-      } else if (Math.abs(f - l) > 1) {
-        el.animate([{ transform: `translateY(${f - l}px)` }, { transform: "none" }], { duration: 420, easing: EASE_IO });
+      } else if (Math.abs(f.y - r.top) > 1 || Math.abs(f.x - r.left) > 1) {
+        el.animate([{ transform: `translate(${f.x - r.left}px, ${f.y - r.top}px)` }, { transform: "none" }], { duration: 420, easing: EASE_IO });
       }
     });
   }
@@ -539,6 +540,7 @@
       const top = best(S.metrics);
       html = `<span class="mini" style="--c:#ffc53d">${top.cc}</span><span class="txt"><b>${esc(top.city)}</b> é o melhor destino <span>· ${esc(fmtDate(S.dates[S.t] || P.fallback.date))}</span></span>`;
     }
+    pill.dataset.city = (S.selected ? bestForState(S.selected) : best(S.metrics)).id;
     if (pill.innerHTML !== html) {
       pill.innerHTML = html;
       if (!reduced) pill.animate([{ opacity: 0.4, filter: "blur(4px)", transform: "translateX(-50%) scale(.97)" }, { opacity: 1, filter: "blur(0)", transform: "translateX(-50%) scale(1)" }], { duration: 260, easing: EASE_OUT });
@@ -744,10 +746,11 @@
     const q = it.q || (isCountry ? country : `${it.label}, ${country}`);
     const sub = isCountry ? "país" : country;
     const price = metric ? `<span class="price mono">${fmtUSD(metric.daily)}/dia</span>` : from ? `<span class="price mono">desde ${fmtUSD(from)}/dia</span>` : "<span></span>";
-    return `<a class="place-link" href="${mapsUrl(q)}" target="_blank" rel="noopener" title="Abrir ${esc(it.label)} no Google Maps">
+    const open = metric ? `<button type="button" class="place-link" data-city="${metric.id}" title="Abrir a ficha de ${esc(it.label)}">` : `<a class="place-link" href="${mapsUrl(q)}" target="_blank" rel="noopener" title="Abrir ${esc(it.label)} no Google Maps">`;
+    return `${open}
         <span class="pl"><b>${esc(it.label)}</b><small>${esc(sub)}</small></span>
-        ${it.note ? `<em>${esc(it.note)}${from ? ` · desde ${fmtUSD(from)}/dia` : ""}</em>` : price}${PIN}
-      </a>`;
+        ${it.note ? `<em>${esc(it.note)}${from ? ` · desde ${fmtUSD(from)}/dia` : ""}</em>` : price}${metric ? '<span class="open-ic" aria-hidden="true">›</span>' : PIN}
+      ${metric ? "</button>" : "</a>"}`;
   }
   function renderSurveys() {
     $("#surveys").innerHTML = P.surveys.map((s) => `
@@ -821,43 +824,83 @@
     const end = pts[pts.length - 1];
     return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true">${flat ? "" : `<path d="${line} L${w - pad},${h} L${pad},${h} Z" fill="${col}" fill-opacity=".12"/>`}<path d="${line}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>${flat ? "" : `<circle cx="${end[0].toFixed(1)}" cy="${end[1].toFixed(1)}" r="2.2" fill="${col}"/>`}</svg>`;
   }
-  function renderRank() {
+  function rankedList() {
     const list = S.metrics.filter((m) => S.region === "all" || m.region === S.region);
     const sorters = { score: (a, b) => b.score - a.score, cost: (a, b) => a.trip - b.trip, fx: (a, b) => b.real12 - a.real12, hype: (a, b) => b.hype - a.hype || b.score - a.score };
-    list.sort(sorters[S.sort]);
-    const shown = list.slice(0, S.showAll ? list.length : 15);
-    flipList($("#rankList"), shown, (m) => m.id, (el, m, i) => {
-      if (!el.firstChild) {
-        el.className = "row";
-        const dots = [0, 1, 2].map((j) => `<i class="${j < m.hype ? "on" : ""}"></i>`).join("");
-        el.innerHTML = `<span class="pos"></span>
-          <div class="place">${cityLink(m)}<span class="sub"></span></div>
-          <div class="meta">
-            <div class="cell"><small>Real 12m</small><span class="fx c-real"></span></div>
-            <div class="cell c-spark"></div>
-            <div class="cell"><small>Por dia</small><span class="mono c-day"></span></div>
-            <div class="cell"><small>7 dias + voo</small><span class="mono c-trip"></span></div>
-          </div>
-          <div class="score"><div class="track"><div class="fill"></div></div><b class="c-score"></b><span class="hype" title="Em alta: citado em ${m.hype} de 3 níveis">${dots}</span></div>
-          ${m.why ? `<div class="why">${esc(m.why)}</div>` : ""}`;
-        el.querySelector(".c-score")._v = m.score;
-      }
-      const pos = el.querySelector(".pos");
-      pos.textContent = i + 1;
-      pos.classList.toggle("top", i < 3);
-      el.querySelector(".sub").textContent = `${m.country} · ${m.cur}${m.cur !== "USD" ? " " + fmtRate(m.now) : ""}`;
-      const r = el.querySelector(".c-real");
-      r.className = "fx c-real " + cls(m.real12);
-      tween(r, m.real12, (v) => fmtPct(v), 600);
-      el.querySelector(".c-spark").innerHTML = spark(m.series);
-      tween(el.querySelector(".c-day"), m.daily, fmtUSD, 600);
-      tween(el.querySelector(".c-trip"), m.trip, fmtUSD, 600);
-      el.querySelector(".fill").style.transform = `scaleX(${m.score / 100})`;
-      tween(el.querySelector(".c-score"), m.score, (v) => Math.round(v), 600);
-    });
+    return list.sort(sorters[S.sort]);
+  }
+  function fillCard(el, m, i) {
+    if (!el.firstChild) {
+      el.className = "ccard";
+      const md = (P.media && P.media[m.id]) || {};
+      el.innerHTML = `<button type="button" class="ccard-btn" data-city="${m.id}" aria-label="Abrir a ficha de ${esc(m.city)}, ${esc(m.country)}">
+          <span class="ph">${md.thumb ? `<img src="${esc(md.thumb)}" alt="" loading="lazy" decoding="async" crossorigin="anonymous">` : ""}</span>
+          <span class="badge rk"></span>
+          <span class="badge sc"><b class="c-score"></b></span>
+          <span class="cc-body">
+            <span class="cc-name"><b>${esc(m.city)}</b><span>${esc(m.country)}</span></span>
+            <span class="cc-meta">
+              <span><small>Por dia</small><b class="c-day"></b></span>
+              <span><small>7 dias + voo</small><b class="c-trip"></b></span>
+              <span><small>Dólar real</small><b class="c-real"></b></span>
+            </span>
+          </span>
+        </button>`;
+      const img = el.querySelector("img");
+      if (img) { const done = () => img.classList.add("in"); if (img.complete && img.naturalWidth) done(); else img.addEventListener("load", done, { once: true }); }
+      el.querySelector(".c-score")._v = m.score;
+    }
+    const rk = el.querySelector(".rk");
+    rk.textContent = "#" + (i + 1);
+    rk.classList.toggle("top", i < 3);
+    tween(el.querySelector(".c-score"), m.score, (v) => Math.round(v), 600);
+    tween(el.querySelector(".c-day"), m.daily, fmtUSD, 600);
+    tween(el.querySelector(".c-trip"), m.trip, fmtUSD, 600);
+    const r = el.querySelector(".c-real");
+    r.className = "c-real " + cls(m.real12);
+    tween(r, m.real12, (v) => fmtPct(v), 600);
+  }
+  function fillRow(el, m, i) {
+    if (!el.firstChild) {
+      el.className = "row";
+      const dots = [0, 1, 2].map((j) => `<i class="${j < m.hype ? "on" : ""}"></i>`).join("");
+      el.innerHTML = `<span class="pos"></span>
+        <div class="place">${cityLink(m)}<span class="sub"></span></div>
+        <div class="meta">
+          <div class="cell"><small>Real 12m</small><span class="fx c-real"></span></div>
+          <div class="cell c-spark"></div>
+          <div class="cell"><small>Por dia</small><span class="mono c-day"></span></div>
+          <div class="cell"><small>7 dias + voo</small><span class="mono c-trip"></span></div>
+        </div>
+        <div class="score"><div class="track"><div class="fill"></div></div><b class="c-score"></b><span class="hype" title="Em alta: citado em ${m.hype} de 3 níveis">${dots}</span></div>
+        ${m.why ? `<div class="why">${esc(m.why)}</div>` : ""}`;
+      el.querySelector(".c-score")._v = m.score;
+    }
+    const pos = el.querySelector(".pos");
+    pos.textContent = i + 1;
+    pos.classList.toggle("top", i < 3);
+    el.querySelector(".sub").textContent = `${m.country} · ${m.cur}${m.cur !== "USD" ? " " + fmtRate(m.now) : ""}`;
+    const r = el.querySelector(".c-real");
+    r.className = "fx c-real " + cls(m.real12);
+    tween(r, m.real12, (v) => fmtPct(v), 600);
+    el.querySelector(".c-spark").innerHTML = spark(m.series);
+    tween(el.querySelector(".c-day"), m.daily, fmtUSD, 600);
+    tween(el.querySelector(".c-trip"), m.trip, fmtUSD, 600);
+    el.querySelector(".fill").style.transform = `scaleX(${m.score / 100})`;
+    tween(el.querySelector(".c-score"), m.score, (v) => Math.round(v), 600);
+  }
+  function renderRank() {
+    const list = rankedList();
+    const cards = S.view === "cards";
+    const limit = cards ? 16 : 15;
+    const shown = list.slice(0, S.showAll ? list.length : limit);
+    $("#cityGrid").hidden = !cards;
+    $("#rankTable").hidden = cards;
+    if (cards) flipList($("#cityGrid"), shown, (m) => m.id, fillCard);
+    else flipList($("#rankList"), shown, (m) => m.id, fillRow);
     const btn = $("#moreBtn");
-    btn.hidden = list.length <= 15;
-    btn.textContent = S.showAll ? "Mostrar só o top 15" : `Ver todas as ${list.length}`;
+    btn.hidden = list.length <= limit;
+    btn.textContent = S.showAll ? `Mostrar só as ${limit} primeiras` : `Ver todas as ${list.length}`;
   }
 
   /* =================== boot =================== */
@@ -872,6 +915,7 @@
     renderSurveys();
     renderDesire();
     updateRangeFill();
+    if (window.POLCARD) window.POLCARD.refresh();
     $("#sbCount").textContent = S.metrics.length;
     $("#sbCur").textContent = FLOAT.length;
   }
@@ -896,9 +940,11 @@
     renderSurveys();
     renderDesire();
     makeSeg($("#regionSeg"), P.regions, () => S.region, (v) => { S.region = v; S.showAll = false; renderRank(); });
+    makeSeg($("#viewSeg"), [{ id: "cards", label: "Cards" }, { id: "list", label: "Lista" }], () => S.view, (v) => { S.view = v; renderRank(); });
     makeSeg($("#sortSeg"), [{ id: "score", label: "Nota" }, { id: "cost", label: "Mais barato" }, { id: "fx", label: "Câmbio" }, { id: "hype", label: "Em alta" }], () => S.sort, (v) => { S.sort = v; renderRank(); });
     setupTabs();
     renderAll();
+    if (window.POLCARD) window.POLCARD.openFromHash();
     startFeed();
     drawMap();
     setupTimeline();
@@ -919,10 +965,18 @@
     });
     addEventListener("keydown", (e) => {
       if (e.target.closest("input, select, textarea")) return;
-      if (e.key === "Escape" && S.selected) selectState(null);
+      if (e.key === "Escape" && S.selected && $("#sheetRoot").hidden) selectState(null);
     });
     setInterval(() => { if (document.visibilityState === "visible" && S.t === 24 && !S.playing) loadFX(); }, 30 * 60 * 1000);
   }
+
+  window.POLAPP = {
+    get metrics() { return S.metrics; },
+    order: () => rankedList().map((m) => m.id),
+    rankOf: (id) => S.metrics.slice().sort((a, b) => b.score - a.score).findIndex((m) => m.id === id) + 1,
+    dateLabel: () => fmtDate(S.dates[S.t] || P.fallback.date),
+    fmtUSD, fmtPct, fmtRate, cls, mapsUrl, toast,
+  };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
