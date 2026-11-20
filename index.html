@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>POLINATOR</title>
+  <meta name="description" content="Monitor ao vivo do câmbio que mostra em qual cidade do mundo o dólar de férias de um americano rende mais agora, com o mapa de onde cada estado dos EUA viaja.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23000'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23ffc53d'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23ffc53d' stroke-opacity='.45' stroke-width='1.5'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"><i></i><i></i></div>
+
+  <!-- ============ app bar ============ -->
+  <header class="appbar">
+    <a class="brand" href="#mapa" aria-label="POLINATOR, início">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5.5" fill="#ffc53d"/><circle cx="16" cy="16" r="11" fill="none" stroke="#ffc53d" stroke-opacity=".45" stroke-width="1.6" stroke-dasharray="2 3.2"/><circle cx="27" cy="16" r="2.1" fill="#ffc53d"/></svg>
+      <b>polinator</b>
+    </a>
+    <nav class="tabs" id="tabs" aria-label="Seções">
+      <span class="thumb" aria-hidden="true"></span>
+      <a href="#mapa" data-sec="mapa">Mapa</a>
+      <a href="#pesquisas" data-sec="pesquisas">Pesquisas</a>
+      <a href="#ranking" data-sec="ranking">Ranking</a>
+    </nav>
+    <p class="appbar-note">Câmbio de <span class="mono" id="hdrDate">19 nov 2026</span></p>
+    <div class="actions">
+      <a class="icon-btn" href="#metodo" aria-label="Como a nota é calculada" title="Método">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>
+      </a>
+      <button class="pill-btn" id="shareBtn" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+        <span>Compartilhar</span>
+      </button>
+      <button class="icon-btn" id="fsBtn" type="button" aria-label="Tela cheia" title="Tela cheia">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ dashboard ============ -->
+  <main>
+    <div class="dash" id="mapa">
+
+      <!-- head-to-head -->
+      <section class="hero card" aria-label="Disputa pelo melhor destino">
+        <div class="hero-row">
+          <div class="who a">
+            <div class="avatar" id="hAvA" style="--c:#ffc53d">BR</div>
+            <div class="who-txt"><b id="hNameA">Rio de Janeiro</b><span id="hSubA">Brasil · BRL</span></div>
+          </div>
+          <h1 class="headline" id="headline"><em id="hLead">Rio de Janeiro</em> lidera agora</h1>
+          <div class="who b">
+            <div class="who-txt"><b id="hNameB">Cidade do México</b><span id="hSubB">México · MXN</span></div>
+            <div class="avatar" id="hAvB" style="--c:#4f7dff">MX</div>
+          </div>
+        </div>
+        <div class="duel" id="duel">
+          <span class="fill-a" id="duelFill" aria-hidden="true"></span>
+          <div class="lab a"><b class="mono" id="hScoreA">0</b><span id="hNoteA"></span></div>
+          <div class="lab b"><span id="hNoteB"></span><b class="mono" id="hScoreB">0</b></div>
+          <span class="mid" aria-hidden="true">vs</span>
+        </div>
+        <div class="hero-foot">
+          <span>Nota POLINATOR de 0 a 100 · as duas cidades mais bem colocadas</span>
+          <span class="live-txt" id="heroLive"><i></i><span id="heroLiveTxt">ao vivo</span></span>
+        </div>
+        <div class="progress" aria-hidden="true"><span id="heroProg"></span></div>
+      </section>
+
+      <!-- left: dollar strength -->
+      <aside class="left card" aria-label="Força do dólar">
+        <div class="blk">
+          <h2>Força do dólar</h2>
+          <p class="sub">Média contra as moedas monitoradas, em 12 meses</p>
+          <div class="duo">
+            <div><small>Nominal</small><b class="mono amber" id="dxNom">…</b></div>
+            <div class="r"><small>Real, sem inflação</small><b class="mono blue" id="dxReal">…</b></div>
+          </div>
+          <p class="status" id="dxStatus"><i></i><span>Buscando câmbio…</span></p>
+          <p class="kpi"><b class="mono" id="kpiN">0</b> <span>de <span id="kpiTot">40</span> moedas</span></p>
+          <p class="kpi-sub">ficaram mais baratas para quem leva dólar, já descontada a inflação. Mais cara: <b id="kpiWorst">—</b>.</p>
+          <div class="chart" id="chart" aria-label="Índice do dólar em 12 meses"></div>
+          <div class="chart-key"><span><i class="amber-bg"></i>Nominal</span><span><i class="blue-bg"></i>Real</span></div>
+        </div>
+        <div class="blk">
+          <h3>O que mudou em 12 meses</h3>
+          <p class="sub">Ganho real do dólar por região, em pontos</p>
+          <div class="regions" id="regions"></div>
+        </div>
+        <div class="blk">
+          <h3 class="with-dot"><i></i>Onde o dólar mais cresceu</h3>
+          <ol class="gainers" id="gainers"></ol>
+        </div>
+      </aside>
+
+      <!-- map -->
+      <section class="mapbox" aria-label="Mapa dos Estados Unidos">
+        <div class="map-pill glass" id="mapPill" aria-live="polite"></div>
+        <svg id="map" viewBox="0 0 1110 700" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Estados por destino internacional preferido"></svg>
+        <div class="legend card" id="legend"></div>
+        <div class="zoom">
+          <button class="icon-btn" id="zIn" type="button" aria-label="Aproximar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="icon-btn" id="zOut" type="button" aria-label="Afastar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+        </div>
+      </section>
+
+      <!-- timeline -->
+      <section class="timeline card" aria-label="Linha do tempo do câmbio">
+        <button class="play" id="playBtn" type="button" aria-label="Reproduzir os últimos 12 meses">
+          <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>
+        </button>
+        <span class="t-date mono" id="tDate">19 nov 2026</span>
+        <div class="t-track">
+          <input type="range" id="tRange" min="0" max="12" step="1" value="12" aria-label="Mês" disabled>
+          <div class="ticks" id="ticks" aria-hidden="true"></div>
+        </div>
+        <button class="live-btn" id="liveBtn" type="button"><i></i>Ao vivo</button>
+      </section>
+
+      <!-- right: state + signals -->
+      <aside class="side card" aria-label="Estado e sinais">
+        <div class="side-head">
+          <h2>Por estado</h2>
+          <div class="select-wrap">
+            <label for="stateSelect" class="sr">Escolha um estado</label>
+            <select id="stateSelect"></select>
+          </div>
+        </div>
+        <div class="state" id="stateBody" aria-live="polite"></div>
+        <div class="feed-head">
+          <h3><i></i>Sinais</h3>
+          <span class="feed-sub">pesquisas, buscas e câmbio</span>
+        </div>
+        <ol class="feed" id="feed"></ol>
+      </aside>
+    </div>
+
+    <!-- ============ pesquisas ============ -->
+    <section id="pesquisas" class="section">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Pesquisas, buscas e reservas</p>
+          <h2>O destino que os americanos mais querem</h2>
+          <p>Cinco levantamentos recentes de buscas, intenção de viagem e viagens compradas. Cada lista soma pontos pela posição de cada país.</p>
+        </div>
+        <div class="desire">
+          <article class="top-wish card" id="topWish"></article>
+          <article class="consensus card">
+            <p class="label">Índice de desejo · consenso das pesquisas</p>
+            <ol class="bars" id="bars"></ol>
+          </article>
+        </div>
+        <div class="surveys" id="surveys"></div>
+        <div class="news" id="news"></div>
+      </div>
+    </section>
+
+    <!-- ============ ranking ============ -->
+    <section id="ranking" class="section">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Ranking POLINATOR</p>
+          <h2>Onde gastar as férias agora</h2>
+          <p>Preço estimado por pessoa em dólar, com o câmbio do dia. Toque no nome da cidade para abrir no Google Maps. Mexa na linha do tempo lá em cima e veja o ranking se reorganizar mês a mês.</p>
+        </div>
+        <div class="controls">
+          <div class="seg card" id="regionSeg" role="group" aria-label="Região"></div>
+          <div class="seg card" id="sortSeg" role="group" aria-label="Ordenar por"></div>
+        </div>
+        <div class="rank card">
+          <div class="rank-head" aria-hidden="true">
+            <span>#</span><span>Cidade</span><span>Dólar real 12m</span><span>Câmbio 12m</span><span>Por dia</span><span>7 dias + voo</span><span>Nota</span>
+          </div>
+          <ol class="rank-list" id="rankList"></ol>
+          <div class="more"><button class="pill-btn" id="moreBtn" type="button">Ver todas</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ método ============ -->
+    <section id="metodo" class="section">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Método</p>
+          <h2>Como a nota é calculada</h2>
+          <p>O câmbio é buscado ao vivo a cada visita e de novo a cada 30 minutos, com 24 meses de histórico. Em países de inflação alta, a alta nominal do dólar é descontada pela diferença de inflação; sem isso, Buenos Aires e Istambul pareceriam mais baratas do que estão.</p>
+        </div>
+        <div class="method-grid">
+          <div class="m"><div class="w">50%</div><h3>Custo efetivo</h3><p>Índice de custo do viajante (hotel, comida, transporte; NYC = 100), corrigido pelo câmbio real.</p></div>
+          <div class="m"><div class="w">20%</div><h3>Ganho real em 12m</h3><p>Quanto o dólar compra a mais (ou a menos) que um ano antes, descontada a inflação local contra a dos EUA.</p></div>
+          <div class="m"><div class="w">10%</div><h3>Momento · 3m</h3><p>Movimento nominal recente. Premia moedas que estão caindo agora contra o dólar.</p></div>
+          <div class="m"><div class="w">20%</div><h3>Em alta</h3><p>Quantas pesquisas e listas de tendência recentes citam o destino (0 a 3).</p></div>
+        </div>
+        <div class="m price-note"><h3>Preços estimados</h3><p>Gasto por dia por pessoa = US$ 380 (um dia de padrão médio em Nova York: hotel 3–4★ em quarto duplo dividido, refeições e transporte local) × custo efetivo da cidade ÷ 100. Como o custo efetivo usa o câmbio do dia, o preço muda com ele. "7 dias + voo" soma 7 dias de gasto e uma passagem ida e volta em classe econômica saindo de um grande aeroporto dos EUA, valor típico arredondado. São estimativas para comparar destinos, não cotações.</p></div>
+        <div class="formula">real12 = (1 + Δdólar12m) × (1 + inflação EUA) ÷ (1 + inflação local) − 1
+custo efetivo = custo base ÷ (1 + real12)
+nota = 0,5·valor(custo efetivo) + 0,2·faixa(real12) + 0,1·faixa(Δ3m) + 0,2·em alta</div>
+        <p class="fine">O mapa usa o destino que mais aparece nas compras de seguro viagem de cada estado em 2025 (InsureMyTrip). O índice de custo e as inflações (exceto Turquia e Argentina, com dado oficial de out/2026) são estimativas arredondadas do POLINATOR. Câmbio: <a href="https://github.com/fawazahmed0/exchange-api">fawazahmed0/exchange-api</a>, com <a href="https://www.exchangerate-api.com">ExchangeRate-API</a> como reserva. Painel informativo, não é recomendação financeira.</p>
+        <ul class="sources" id="sources"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span><i class="dot"></i><b id="sbCount">63</b> cidades monitoradas · <span id="sbCur">42</span> moedas</span>
+    <span>Dados: exchange-api · InsureMyTrip · Google Flights · eDreams · Nomad eSIM</span>
+  </footer>
+
+  <div class="tooltip" id="tip" role="tooltip"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
